@@ -69,7 +69,7 @@ OCCUPATION_GROUPS = {
 
 ONE_HOT_COLUMNS = [
     "marital_status", "application_mode", "course", "previous_qualification",
-    "mother_qualification", "father_qualification", "mother_occupation", "father_occupation",
+    "nationality", "mother_qualification", "father_qualification", "mother_occupation", "father_occupation",
 ]
 
 
@@ -93,13 +93,14 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     issues = []
 
-    # More approved units than enrolled units: cap approved at enrolled.
-    for sem in ("1st", "2nd"):
-        approved, enrolled = f"units_{sem}_approved", f"units_{sem}_enrolled"
-        bad = df[approved] > df[enrolled]
-        if bad.any():
-            issues.append(f"{bad.sum()} students with more approved than enrolled units ({sem} sem)")
-            df.loc[bad, approved] = df.loc[bad, enrolled]
+    # More approved units than enrolled units?
+    more_1st = df["units_1st_approved"] > df["units_1st_enrolled"]
+    more_2nd = df["units_2nd_approved"] > df["units_2nd_enrolled"]
+    if more_1st.any() or more_2nd.any():
+        issues.append(f"students with more approved than enrolled units: {more_1st.sum() + more_2nd.sum()}")
+        # cap approved units at the number of enrolled units
+        df.loc[more_1st, "units_1st_approved"] = df.loc[more_1st, "units_1st_enrolled"]
+        df.loc[more_2nd, "units_2nd_approved"] = df.loc[more_2nd, "units_2nd_enrolled"]
 
     for col in ("unemployment_rate", "inflation_rate"):
         if ((df[col] < -50) | (df[col] > 100)).any():
@@ -115,8 +116,6 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
 
     for issue in issues:
         print(f"[validation] {issue}")
-    if not issues:
-        print("[validation] no issues found")
     return df
 
 
@@ -125,9 +124,9 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Share of enrolled units that were approved, per semester (0 if nothing enrolled).
-    for sem in ("1st", "2nd"):
-        enrolled = df[f"units_{sem}_enrolled"].replace(0, np.nan)
-        df[f"pass_ratio_{sem}"] = (df[f"units_{sem}_approved"] / enrolled).fillna(0)
+    df["pass_ratio_1st"] = df["units_1st_approved"] / df["units_1st_enrolled"].replace(0, np.nan)
+    df["pass_ratio_2nd"] = df["units_2nd_approved"] / df["units_2nd_enrolled"].replace(0, np.nan)
+    df[["pass_ratio_1st", "pass_ratio_2nd"]] = df[["pass_ratio_1st", "pass_ratio_2nd"]].fillna(0)
 
     # Change in average grade between semesters.
     df["grade_change"] = df["grade_2nd"] - df["grade_1st"]
@@ -154,8 +153,8 @@ def encode_categorical(df: pd.DataFrame) -> pd.DataFrame:
     if unmapped:
         raise ValueError(f"{unmapped} qualification/occupation codes without a group")
 
-    # Nationality: Portuguese (code 1) or not.
-    df["portuguese"] = (df.pop("nationality") == 1).astype(int)
+    # Nationality: Portuguese (code 1) or other.
+    df["nationality"] = df["nationality"].apply(lambda x: "portuguese" if x == 1 else "other")
     return pd.get_dummies(df, columns=ONE_HOT_COLUMNS, drop_first=True, dtype=int)
 
 

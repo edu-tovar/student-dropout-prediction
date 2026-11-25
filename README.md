@@ -38,8 +38,8 @@ All figures below come from running the notebooks in order.
 | Model | Test accuracy | Test macro F1 | Test F1 (enrolled) | CV macro F1 (5-fold) |
 |---|---|---|---|---|
 | Logistic regression | 0.755 | 0.670 | 0.406 | **0.698 ± 0.015** |
-| Random forest | **0.789** | **0.713** | **0.469** | 0.694 ± 0.020 |
-| MLP | 0.748 | 0.662 | 0.376 | 0.686 ± 0.012 |
+| Random forest | **0.790** | **0.709** | **0.454** | 0.686 ± 0.018 |
+| MLP | 0.763 | 0.693 | 0.450 | 0.686 ± 0.028 |
 | SVM (RBF) | 0.762 | 0.675 | 0.412 | 0.679 ± 0.014 |
 | k-NN | 0.668 | 0.575 | 0.295 | 0.594 ± 0.019 |
 
@@ -58,7 +58,7 @@ The classifiers use second-semester performance, so they predict the outcome at 
 | Lasso (α = 0.01) | **2.583** | 1.540 | **0.754** |
 | Linear regression | 2.589 | 1.550 | 0.752 |
 | Ridge (α = 100) | 2.595 | 1.565 | 0.751 |
-| Random forest | 2.710 | 1.422 | 0.729 |
+| Random forest | 2.715 | 1.424 | 0.728 |
 
 The linear models outperform the random forest on RMSE and R². The random forest has a lower MAE but a higher RMSE: its typical error is smaller, but it makes more large errors, which RMSE penalises quadratically. In every model the largest errors come from the 173 test students (19.5 %) whose second-semester average is 0. For Lasso, the MAE is 2.629 on those students and 1.275 on the rest.
 
